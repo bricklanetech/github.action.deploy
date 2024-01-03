@@ -1,0 +1,23 @@
+name: Actions for Pull Request
+
+on:
+  pull_request:
+    branches:
+      - '*'
+
+env:
+  GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+
+jobs:
+  check-pull-request-allowed-to-target-branch:
+    name: Check if Pull Request is allowed to the Target Branch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: bricklanetech/action.control-merge@v1
+        with:
+          workflow: main
+          feature_pattern: feature/*
+          hotfix_pattern: hotfix/*

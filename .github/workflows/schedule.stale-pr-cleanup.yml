@@ -1,0 +1,22 @@
+# Background activity to ensure any old issues and PRs are deleted if no activity is detected.
+---
+name: Mark stale issues and pull requests
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  stale:
+    name: Mark stale issues and pull requests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/stale@v8
+        with:
+          stale-pr-message: 'This Pull Request is stale because it has been open 30 days with no activity. Remove stale label or comment or this will be closed in 5 days'
+          exempt-issue-labels: 'awaiting-approval,work-in-progress'
+          exempt-pr-labels: 'awaiting-approval,work-in-progress'
+          exempt-draft-pr: true
+          days-before-stale: 30
+          days-before-close: 5

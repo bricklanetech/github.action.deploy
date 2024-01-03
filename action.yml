@@ -1,0 +1,98 @@
+name: Prepare and deploy poetry based project
+description: Common GitHub Action for deploying a poetry based project
+
+inputs:
+  githubToken:
+    description: 'The GitHub token to use for authentication'
+    required: true
+    default: ''
+  pythonVersion:
+    description: 'The Python version to use'
+    required: true
+    default: '3.9'
+  awsRegion:
+    description: 'The AWS region to use'
+    required: true
+    default: 'eu-west-1'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set repository name to variable
+      run: |
+        echo "PROJECT_SHORT_NAME=$(echo ${{ github.repository }} | cut -d '/' -f 2)" >> $GITHUB_ENV
+
+    - name: Configure GitHub credentials
+      run: git config --global url."https://${{ inputs.githubToken }}@github.com/".insteadOf "https://github.com/"
+
+    - name: Configuration for Production Environment
+      if: ${{ github.ref == 'refs/heads/production' }}
+      run: |
+        echo "DEPLOYMENT_ENV=production" >> $GITHUB_ENV
+        echo "AWS_OIDC_ROLE=${{ secrets.AWS_OIDC_ROLE_ENG_PRODUCTION }}" >> $GITHUB_ENV
+
+    - name: Configuration for Testing Environment
+      if: ${{ github.ref == 'refs/heads/test' }}
+      run: |
+        echo "DEPLOYMENT_ENV=test" >> $GITHUB_ENV
+        echo "AWS_OIDC_ROLE=${{ secrets.AWS_OIDC_ROLE_ENG_TEST }}" >> $GITHUB_ENV
+
+    - name: Configure initial AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_OIDC_ROLE_AUTH_ENG }}
+        role-session-name: "initial-auth-from-${{ env.PROJECT_SHORT_NAME }}"
+        aws-region: ${{ inputs.awsRegion }}
+
+    - name: Configure ${{ github.ref == 'refs/heads/production' && 'Production' || 'Test' }} account AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ inputs.awsRegion }}
+        role-to-assume: ${{ env.AWS_OIDC_ROLE }}
+        role-session-name: "deployment-${{ env.PROJECT_SHORT_NAME }}"
+        role-chaining: true
+
+    - name: Check out source repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python environment
+      uses: actions/setup-python@v5
+      id: setup-python
+      with:
+        python-version: "${{ inputs.pythonVersion }}"
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-create: false
+
+    - name: Cache Poetry dependencies
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pypoetry
+        key: poetry.lock-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install dependencies from the cache
+      if: steps.cached-poetry-dependencies.outputs.cache-hit == 'true'
+      run: poetry install --no-interaction --with dev,testing
+
+    - name: Install dependencies from Internet
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --with dev,testing --no-cache
+
+    - name: Cache Ansible dependencies
+      id: cached-ansible-dependencies
+      uses: actions/cache@v3
+      with:
+        path: ansible/roles.galaxy
+        key: requirements.yml-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/ansible/requirements.yml') }}
+
+    - name: Install any galaxy modules if not cached
+      if: steps.cached-ansible-dependencies.outputs.cache-hit != 'true'
+      run: |
+        ansible-galaxy install -r ansible/requirements.yml --force
+
+    - name: Deploy
+      run: |
+        ansible-playbook -i ansible/inv/${{ env.DEPLOYMENT_ENV }} ansible/playbook.yml --tags=create

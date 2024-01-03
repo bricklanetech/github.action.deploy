@@ -1,0 +1,68 @@
+# When tags are deleted, this workflow will reset the HEAD of each branch to the latest tag on the branch.
+# Will have no effect on branches that are already tagged at the HEAD, and will ignore feature/hotfix branches.
+#
+# This workflow will create a temporary static backup of the HEAD revision of any branch that is rolled back.
+#
+# WARNING: These changes are DESTRUCTIVE, so it very important ensure that release branches are properly tagged
+# before enabling this workflow.
+---
+name: Branch cleanup on tag deletion
+on: delete
+jobs:
+  check:
+    # This workflow must only run when the delete action is performed on a tag
+    # GHA currently doesnt provide a way to detect tag deletions specifically on the trigger
+    name: Check if deletion performed on tag
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    outputs:
+      skipped: ${{ steps.get-status.outputs.skipped }}
+    steps:
+      - name: Determine if event occurred on tag or branch
+        id: get-status
+        run: test "$(cat ${GITHUB_EVENT_PATH} | jq -r '.ref_type')" == "tag" || echo "skipped=true" >> "$GITHUB_OUTPUT"
+
+  cleanup:
+    name: Cleanup branch history (reset to previous tag if exists)
+    runs-on: ubuntu-latest
+    needs: check
+    if: '! needs.check.outputs.skipped'
+    steps:
+      - name: Get Additional Vars
+        id: vars
+        run: |
+          TAG_NAME=$(cat ${GITHUB_EVENT_PATH} | jq -r '.ref')
+          echo "tag_name::${TAG_NAME}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v1
+
+      - name: Cleanup branch following tag deletion
+        id: tag_cleanup
+        uses: propertylift/action.tag-deletion-cleanup@v1
+        with:
+          github_token: ${{ secrets.BOT_TOKEN }}
+
+      - name: Archive Backups
+        uses: actions/upload-artifact@v3
+        if: steps.tag_cleanup.outputs.cleaned
+        with:
+          name: pre-cleanup-snapshots
+          path: /home/runner/work/_temp/_github_home/tag-deletion-cleanup
+
+      - name: Notify Slack
+        uses: slackapi/slack-github-action@v1
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        with:
+          channel-id: ${{ secrets.SLACK_CHANNEL_ID_TECHCICD }}
+          payload: |
+            {
+              "attachments": [
+                {
+                  "title": "${{ github.actor }} has deleted tag ${{ steps.vars.outputs.tag_name }} from ${{ github.repository }}",
+                  "title_link": "https://github.com/${{ github.repository }}/commit/${{ github.sha }}/checks",
+                  "text": "The following branches have been rolled back to their latest tagged commit: *${{ steps.tag_cleanup.outputs.cleaned }}*\n\n_For more info (or to access the pre-cleanup backups), see the <https://github.com/${{ github.repository }}/commit/${{ github.sha }}/checks|action checks page.>_",
+                  "color": "warning"
+                }
+              ]
+            }
