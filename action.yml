@@ -2,6 +2,22 @@ name: Prepare and deploy poetry based project
 description: Common GitHub Action for deploying a poetry based project
 
 inputs:
+  awsAuthRole:
+    description: 'The AWS role to use for authentication'
+    required: true
+    default: ''
+  awsEnvRole:
+    description: 'The AWS role to use for deployment'
+    required: true
+    default: ''
+  awsEnvName:
+    description: 'The AWS environment name'
+    required: true
+    default: ''
+  awsRegion:
+    description: 'The AWS region to use'
+    required: true
+    default: 'eu-west-1'
   githubToken:
     description: 'The GitHub token to use for authentication'
     required: true
@@ -10,10 +26,6 @@ inputs:
     description: 'The Python version to use'
     required: true
     default: '3.9'
-  awsRegion:
-    description: 'The AWS region to use'
-    required: true
-    default: 'eu-west-1'
 
 runs:
   using: "composite"
@@ -26,24 +38,10 @@ runs:
       shell: bash -e {0}
       run: git config --global url."https://${{ inputs.githubToken }}@github.com/".insteadOf "https://github.com/"
 
-    - name: Configuration for Production Environment
-      shell: bash -e {0}
-      if: ${{ github.ref == 'refs/heads/production' }}
-      run: |
-        echo "DEPLOYMENT_ENV=production" >> $GITHUB_ENV
-        echo "AWS_OIDC_ROLE=${{ secrets.AWS_OIDC_ROLE_ENG_PRODUCTION }}" >> $GITHUB_ENV
-
-    - name: Configuration for Testing Environment
-      shell: bash -e {0}
-      if: ${{ github.ref == 'refs/heads/test' }}
-      run: |
-        echo "DEPLOYMENT_ENV=test" >> $GITHUB_ENV
-        echo "AWS_OIDC_ROLE=${{ secrets.AWS_OIDC_ROLE_ENG_TEST }}" >> $GITHUB_ENV
-
     - name: Configure initial AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ secrets.AWS_OIDC_ROLE_AUTH_ENG }}
+        role-to-assume: ${{ inputs.awsAuthRole }}
         role-session-name: "initial-auth-from-${{ env.PROJECT_SHORT_NAME }}"
         aws-region: ${{ inputs.awsRegion }}
 
@@ -51,7 +49,7 @@ runs:
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-region: ${{ inputs.awsRegion }}
-        role-to-assume: ${{ env.AWS_OIDC_ROLE }}
+        role-to-assume: ${{ inputs.awsEnvRole }}
         role-session-name: "deployment-${{ env.PROJECT_SHORT_NAME }}"
         role-chaining: true
 
@@ -100,4 +98,4 @@ runs:
 
     - name: Deploy
       shell: bash -e {0}
-      run: ansible-playbook -i ansible/inv/${{ env.DEPLOYMENT_ENV }} ansible/playbook.yml --tags=create
+      run: ansible-playbook -i ansible/inv/${{ inputs.awsEnvName }} ansible/playbook.yml --tags=create
