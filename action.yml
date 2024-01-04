@@ -72,7 +72,7 @@ runs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pypoetry
-        key: poetry.lock-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        key: poetry.lock-deployment-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
     - name: Install dependencies from the cache
       shell: bash
