@@ -112,7 +112,7 @@ runs:
     - name: DEBUG
       shell:
       run: |
-        pip --python /opt/hostedtoolcache/Python/3.9.18/x64/bin/python convert-case
+        pip --python /opt/hostedtoolcache/Python/3.9.18/x64/bin/python install convert-case
 
     - name: Deploy
       shell: bash
