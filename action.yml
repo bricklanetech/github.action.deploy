@@ -107,7 +107,8 @@ runs:
         ls -la
 
     - name: DEBUG
-      shell: |
+      shell:
+      run:  |
         poetry config --list
         poetry env info
 
