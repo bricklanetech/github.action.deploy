@@ -77,12 +77,12 @@ runs:
     - name: Install dependencies from the cache
       shell: bash
       if: steps.cached-poetry-dependencies.outputs.cache-hit == 'true'
-      run: poetry install --no-interaction --with dev,testing
+      run: poetry install --no-interaction --with deployment
 
     - name: Install dependencies from Internet
       shell: bash
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      run: poetry install --no-interaction --with dev,testing --no-cache
+      run: poetry install --no-interaction --with deployment --no-cache
 
     - name: Cache Ansible dependencies
       id: cached-ansible-dependencies
@@ -98,19 +98,21 @@ runs:
 
     - name: DEBUG
       shell: bash
-      run: ansible-playbook --version
-
-    - name: DEBUG
-      shell: bash
       run: |
+        ansible-playbook --version
         pwd
         ls -la
 
     - name: DEBUG
-      shell:
-      run:  |
+      shell: bash
+      run: |
         poetry config --list
         poetry env info
+
+    - name: DEBUG
+      shell:
+      run: |
+        pip --python /opt/hostedtoolcache/Python/3.9.18/x64/bin/python convert-case
 
     - name: Deploy
       shell: bash
