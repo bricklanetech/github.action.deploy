@@ -31,11 +31,11 @@ runs:
   using: "composite"
   steps:
     - name: Set repository name to variable
-      shell: bash -e {0}
+      shell: bash
       run: echo "PROJECT_SHORT_NAME=$(echo ${{ github.repository }} | cut -d '/' -f 2)" >> $GITHUB_ENV
 
     - name: Configure GitHub credentials
-      shell: bash -e {0}
+      shell: bash
       run: git config --global url."https://${{ inputs.githubToken }}@github.com/".insteadOf "https://github.com/"
 
     - name: Configure initial AWS Credentials
@@ -75,12 +75,12 @@ runs:
         key: poetry.lock-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
     - name: Install dependencies from the cache
-      shell: bash -e {0}
+      shell: bash
       if: steps.cached-poetry-dependencies.outputs.cache-hit == 'true'
       run: poetry install --no-interaction --with dev,testing
 
     - name: Install dependencies from Internet
-      shell: bash -e {0}
+      shell: bash
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: poetry install --no-interaction --with dev,testing --no-cache
 
@@ -92,10 +92,13 @@ runs:
         key: requirements.yml-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/ansible/requirements.yml') }}
 
     - name: Install any galaxy modules if not cached
-      shell: bash -e {0}
+      shell: bash
       if: steps.cached-ansible-dependencies.outputs.cache-hit != 'true'
       run: ansible-galaxy install -r ansible/requirements.yml --force
 
     - name: Deploy
-      shell: bash -e {0}
+      shell: bash
       run: ansible-playbook -i ansible/inv/${{ inputs.awsEnvName }} ansible/playbook.yml --tags=create
+branding:
+  icon: 'sunset'
+  color: 'black'
