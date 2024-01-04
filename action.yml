@@ -42,7 +42,7 @@ runs:
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ inputs.awsAuthRole }}
-        role-session-name: "initial-auth-from-${{ env.PROJECT_SHORT_NAME }}"
+        role-session-name: "initial-auth-from-${{ github.actor }}-${{ env.PROJECT_SHORT_NAME }}"
         aws-region: ${{ inputs.awsRegion }}
 
     - name: Configure ${{ github.ref == 'refs/heads/production' && 'Production' || 'Test' }} account AWS credentials
@@ -50,7 +50,7 @@ runs:
       with:
         aws-region: ${{ inputs.awsRegion }}
         role-to-assume: ${{ inputs.awsEnvRole }}
-        role-session-name: "deployment-${{ env.PROJECT_SHORT_NAME }}"
+        role-session-name: "deployment-${{ github.actor }}-${{ env.PROJECT_SHORT_NAME }}"
         role-chaining: true
 
     - name: Check out source repository
@@ -99,6 +99,8 @@ runs:
     - name: Deploy
       shell: bash
       run: ansible-playbook -i ansible/inv/${{ inputs.awsEnvName }} ansible/playbook.yml --tags=create
+
+# Ref: https://haya14busa.github.io/github-action-brandings/
 branding:
   icon: 'sunset'
   color: 'black'
