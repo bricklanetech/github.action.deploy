@@ -96,26 +96,6 @@ runs:
       if: steps.cached-ansible-dependencies.outputs.cache-hit != 'true'
       run: ansible-galaxy install -r ansible/requirements.yml --force
 
-    - name: DEBUG
-      shell: bash
-      run: |
-        ansible-playbook --version
-        pwd
-        ls -la
-        ls -la /opt/hostedtoolcache/Python/3.9.18/x64/bin/
-
-    - name: DEBUG
-      shell: bash
-      run: |
-        poetry config --list
-        poetry env info
-
-    # python -c "import convert_case; print(convert_case.pascal_case('hello World'))"
-    # - name: DEBUG
-    #   shell:
-    #   run: |
-    #     pip --python /opt/hostedtoolcache/Python/3.9.18/x64/bin/python install convert-case
-
     - name: Deploy
       shell: bash
       run: ansible-playbook -i ansible/inv/${{ inputs.awsEnvName }} ansible/playbook.yml --tags=create
