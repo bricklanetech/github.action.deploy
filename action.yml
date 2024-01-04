@@ -102,14 +102,15 @@ runs:
         ansible-playbook --version
         pwd
         ls -la
+        ls -la /opt/hostedtoolcache/Python/3.9.18/x64/bin/
 
     - name: DEBUG
       shell: bash
       run: |
         poetry config --list
         poetry env info
-        python -c "import convert_case; print(convert_case.pascal_case('hello World'))"
 
+    # python -c "import convert_case; print(convert_case.pascal_case('hello World'))"
     # - name: DEBUG
     #   shell:
     #   run: |
