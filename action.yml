@@ -96,6 +96,16 @@ runs:
       if: steps.cached-ansible-dependencies.outputs.cache-hit != 'true'
       run: ansible-galaxy install -r ansible/requirements.yml --force
 
+    - name: DEBUG
+      shell: bash
+      run: ansible-playbook --version
+
+    - name: DEBUG
+      shell: bash
+      run: |
+        pwd
+        ls -la
+
     - name: Deploy
       shell: bash
       run: ansible-playbook -i ansible/inv/${{ inputs.awsEnvName }} ansible/playbook.yml --tags=create
