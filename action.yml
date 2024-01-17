@@ -42,7 +42,7 @@ runs:
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ inputs.awsAuthRole }}
-        role-session-name: "initial-auth-from-${{ github.actor }}-${{ env.PROJECT_SHORT_NAME }}"
+        role-session-name: "${{ github.actor }}-${{ env.PROJECT_SHORT_NAME }}"
         aws-region: ${{ inputs.awsRegion }}
 
     - name: Configure ${{ github.ref == 'refs/heads/production' && 'Production' || 'Test' }} account AWS credentials
