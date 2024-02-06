@@ -50,7 +50,7 @@ runs:
       with:
         aws-region: ${{ inputs.awsRegion }}
         role-to-assume: ${{ inputs.awsEnvRole }}
-        role-session-name: "deployment-${{ github.actor }}-${{ env.PROJECT_SHORT_NAME }}"
+        role-session-name: "${{ github.actor }}-${{ env.PROJECT_SHORT_NAME }}"
         role-chaining: true
 
     - name: Check out source repository
