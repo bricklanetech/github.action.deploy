@@ -21,9 +21,8 @@ jobs:
           echo "PROJECT_SHORT_NAME=$(echo ${{ github.repository }} | cut -d '/' -f 2)" >> $GITHUB_ENV
 
       - name: Bump & Tag & Release
-        uses: bricklanetech/github.action.bump-tag-release@v0.4.2
+        uses: bricklanetech/github.action.bump-tag-release@v0.5.2
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
-          projectName: ${{ env.PROJECT_SHORT_NAME }}
           slackChannelId: ${{ secrets.SLACK_CHANNEL_ID_TECHCICD }}
           slackBotToken: ${{ secrets.SLACK_TOKEN }}

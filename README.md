@@ -43,6 +43,7 @@ TBD
 - name: Deploy
   uses: bricklanetech/github.action.deploy@latest
   with:
+    ansibleArgs: ''
     awsAuthRole: ${{ secrets.AWS_OIDC_ROLE_AUTH_ENG }}
     awsEnvRole: ${{ env.AWS_OIDC_ROLE }}
     awsEnvName: ${{ env.DEPLOYMENT_ENV }}
@@ -55,6 +56,7 @@ TBD
 
 | Parameter Name | Required | Default   | Description                                |
 | -------------- | -------- | --------- | ------------------------------------------ |
+| ansibleArgs    | No       | ''        | The Ansible arguments to use additionally  |
 | awsAuthRole    | Yes      | ''        | The AWS role to use for authentication     |
 | awsEnvRole     | Yes      | ''        | The AWS role to use for deployment         |
 | awsEnvName     | Yes      | ''        | The AWS environment name                   |
