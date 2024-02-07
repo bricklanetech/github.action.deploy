@@ -2,10 +2,6 @@ name: Prepare and deploy poetry based project
 description: Common GitHub Action for deploying a poetry based project
 
 inputs:
-  ansibleArgs:
-    description: 'The Ansible arguments to use'
-    required: false
-    default: ''
   awsAuthRole:
     description: 'The AWS role to use for authentication'
     required: true
@@ -102,7 +98,7 @@ runs:
 
     - name: Deploy
       shell: bash
-      run: ansible-playbook -i ansible/inv/${{ inputs.awsEnvName }} ansible/playbook.yml --tags=create "${{inputs.ansibleArgs}}"
+      run: ansible-playbook -i ansible/inv/${{ inputs.awsEnvName }} ansible/playbook.yml --tags=create
 
 # Ref: https://haya14busa.github.io/github-action-brandings/
 branding:
